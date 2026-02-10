@@ -89,7 +89,7 @@ export default function ArticleEditorPage({
     return (
       <div className="p-8">
         <p className="text-muted-foreground">Article not found</p>
-        <Link href="/articles" className="text-primary underline text-sm">
+        <Link href="/create" className="text-primary underline text-sm">
           Back to Articles
         </Link>
       </div>
@@ -102,7 +102,7 @@ export default function ArticleEditorPage({
       <div className="flex-1 overflow-y-auto p-8 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Link href="/articles">
+          <Link href="/create">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>

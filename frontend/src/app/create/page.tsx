@@ -16,7 +16,7 @@ import { FileText, Eye } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 
-export default function ArticlesPage() {
+export default function CreatePage() {
   const [filterStage, setFilterStage] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
 
@@ -42,13 +42,9 @@ export default function ArticlesPage() {
   return (
     <div className="p-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Articles</h1>
-          <p className="text-muted-foreground">
-            Review, edit, and manage your content
-          </p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold">Create</h1>
+        <p className="text-muted-foreground">Articles & content editor</p>
       </div>
 
       {/* Stage Summary */}
@@ -98,7 +94,6 @@ export default function ArticlesPage() {
 
       {/* Article List */}
       <div className="rounded-lg border overflow-hidden">
-        {/* Header Row */}
         <div className="flex items-center gap-4 px-4 py-2 bg-muted/50 text-xs font-medium text-muted-foreground border-b">
           <div className="flex-1">Article</div>
           <div className="w-24 hidden md:block">Created</div>
@@ -117,12 +112,11 @@ export default function ArticlesPage() {
           return (
             <Link
               key={article.id}
-              href={`/articles/${article.id}`}
+              href={`/create/${article.id}`}
               className={`flex items-center gap-4 px-4 py-3 hover:bg-accent/50 transition-colors ${
                 idx < sorted.length - 1 ? "border-b" : ""
               }`}
             >
-              {/* Title + Meta */}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{article.title}</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
@@ -139,38 +133,32 @@ export default function ArticlesPage() {
                 </div>
               </div>
 
-              {/* Created */}
               <div className="w-24 hidden md:block">
                 <p className="text-xs text-muted-foreground tabular-nums">
                   {fmt(article.createdAt)}
                 </p>
               </div>
 
-              {/* Live since */}
               <div className="w-24 hidden lg:block">
                 <p className="text-xs text-muted-foreground tabular-nums">
                   {article.publishedAt ? fmt(article.publishedAt) : "—"}
                 </p>
               </div>
 
-              {/* Last edited */}
               <div className="w-24 hidden lg:block">
                 <p className="text-xs text-muted-foreground tabular-nums">
                   {article.lastEditedAt ? fmt(article.lastEditedAt) : "—"}
                 </p>
               </div>
 
-              {/* Stage */}
               <div className="w-20">
                 <StageBadge stage={article.stage} />
               </div>
 
-              {/* Condition */}
               <div className="w-28">
                 <ConditionBadge condition={article.condition} />
               </div>
 
-              {/* Action */}
               <div className="w-10 text-right">
                 <Button variant="ghost" size="icon" className="h-8 w-8">
                   <Eye className="h-3.5 w-3.5" />
@@ -186,7 +174,7 @@ export default function ArticlesPage() {
           <FileText className="mb-3 h-8 w-8 text-muted-foreground" />
           <p className="text-sm font-medium">No articles found</p>
           <p className="text-xs text-muted-foreground">
-            Produce topics from the Planner to see articles here
+            Produce topics from Plan to see articles here
           </p>
         </div>
       )}
