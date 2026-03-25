@@ -7,6 +7,11 @@ services:
       # ── Claude CLI Credentials (Max subscription) ──────────
       # Mount your local Claude CLI credentials into the container.
       # Only needed if you DON'T set ANTHROPIC_API_KEY in .env.
+      #
+      # On macOS, credentials are stored in the Keychain — export first:
+      #   security find-generic-password -s "Claude Code-credentials" -w > ~/.claude/.credentials.json
+      # On Linux, ~/.claude/.credentials.json already exists after `claude login`.
+      #
       # - ~/.claude.json:/root/.claude.json:ro
       # - ~/.claude/.credentials.json:/root/.claude/.credentials.json:ro
     environment: {}

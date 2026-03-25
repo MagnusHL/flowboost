@@ -86,14 +86,31 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 ### Option 2: Claude CLI Credentials (Max subscription)
 
-If you have a Claude Max subscription and are logged into the CLI (`claude login`), mount your credentials into the container:
+If you have a Claude Max subscription, you can use your existing CLI credentials instead of an API key.
+
+**Step 1:** Log in to the CLI (if not already):
 
 ```bash
-# Copy the override template
+claude login
+```
+
+**Step 2:** Export your credentials to a file.
+
+On **macOS**, the CLI stores credentials in the Keychain, not on disk. Export them manually:
+
+```bash
+security find-generic-password -s "Claude Code-credentials" -w > ~/.claude/.credentials.json
+```
+
+On **Linux**, the CLI already stores credentials at `~/.claude/.credentials.json` — no export needed.
+
+**Step 3:** Create a Docker Compose override to mount the credentials into the container:
+
+```bash
 cp docker-compose.override.example.yml docker-compose.override.yml
 ```
 
-Uncomment the volume mounts in `docker-compose.override.yml`:
+Edit `docker-compose.override.yml`:
 
 ```yaml
 services:
@@ -103,7 +120,22 @@ services:
       - ~/.claude/.credentials.json:/root/.claude/.credentials.json:ro
 ```
 
-Leave `ANTHROPIC_API_KEY` empty in `.env` — the CLI will use its own credentials.
+**Step 4:** Start the services:
+
+```bash
+docker compose up -d --force-recreate
+```
+
+Verify authentication inside the container:
+
+```bash
+docker compose exec api claude auth status
+# Expected: "loggedIn": true, "authMethod": "oauth_token"
+```
+
+Leave `ANTHROPIC_API_KEY` empty in `.env` — the CLI will use the mounted credentials.
+
+> **Note:** OAuth tokens expire. If the container reports `loggedIn: false`, re-export your credentials (Step 2) and recreate the container.
 
 ## Project Structure
 
