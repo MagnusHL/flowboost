@@ -233,17 +233,9 @@ To publish articles directly to a GitHub repo:
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feat/your-feature`
-3. Commit with conventional format: `feat(scope): description`
-4. Open a Pull Request against `develop`
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, branching conventions, and PR guidelines.
 
-### Branch Naming
-
-- `feat/` — New features
-- `fix/` — Bug fixes
-- `chore/` — Maintenance
-- `refactor/` — Code restructuring
+All PRs go against `main`. AI-assisted contributions are welcome.
 
 ## Contributors
 
