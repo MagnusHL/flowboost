@@ -83,6 +83,7 @@ export default function MediaPage() {
   const [newTag, setNewTag] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [usageTitles, setUsageTitles] = useState<Record<string, string>>({});
 
   // Upload
   const [uploading, setUploading] = useState(false);
@@ -159,11 +160,30 @@ export default function MediaPage() {
 
   // ── Detail panel ───────────────────────────────────────────────
 
-  const openDetail = (asset: MediaAsset) => {
+  const openDetail = async (asset: MediaAsset) => {
     setDetailAsset(asset);
     setEditTitle(asset.title ?? "");
     setEditDescription(asset.description ?? "");
     setEditAltText(asset.altText ?? "");
+    // Resolve content titles for usedBy references
+    if (asset.usedBy.length > 0 && customerId && projectId) {
+      const titles: Record<string, string> = {};
+      await Promise.all(
+        asset.usedBy.map(async (ref) => {
+          if (usageTitles[ref.contentId]) {
+            titles[ref.contentId] = usageTitles[ref.contentId];
+            return;
+          }
+          try {
+            const item = await api.getContentItem(customerId, projectId, ref.contentId);
+            titles[ref.contentId] = item.title;
+          } catch {
+            titles[ref.contentId] = ref.contentId.slice(0, 8) + "...";
+          }
+        }),
+      );
+      setUsageTitles((prev) => ({ ...prev, ...titles }));
+    }
     setEditTags([...asset.tags]);
     setNewTag("");
     setDetailOpen(true);
@@ -243,8 +263,12 @@ export default function MediaPage() {
       });
       setAssets((prev) =>
         prev.map((a) => {
-          const updated = result.updated.find((u) => u.id === a.id);
-          return updated ?? a;
+          if (result.updated.includes(a.id)) {
+            const tags = [...(a.tags ?? [])];
+            if (!tags.includes(tag)) tags.push(tag);
+            return { ...a, tags };
+          }
+          return a;
         }),
       );
       setBulkTagOpen(false);
@@ -652,7 +676,12 @@ export default function MediaPage() {
                           className="flex items-center gap-2 text-xs rounded border px-2.5 py-1.5"
                         >
                           <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <span className="truncate flex-1">{ref.contentId}</span>
+                          <a
+                            href={`/content/${ref.contentId}`}
+                            className="truncate flex-1 text-primary hover:underline"
+                          >
+                            {usageTitles[ref.contentId] ?? ref.contentId.slice(0, 8) + "..."}
+                          </a>
                           <Badge variant="outline" className="text-[10px] h-4 px-1">
                             {ref.role}
                           </Badge>

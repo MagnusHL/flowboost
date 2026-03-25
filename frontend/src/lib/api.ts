@@ -465,7 +465,7 @@ export function bulkUpdateMedia(
   customerId: string,
   projectId: string,
   data: { assetIds: string[]; addTags?: string[]; removeTags?: string[] },
-): Promise<{ updated: MediaAsset[] }> {
+): Promise<{ updated: string[]; notFound: string[] }> {
   return fetchJson(`/customers/${customerId}/projects/${projectId}/media/bulk/update`, {
     method: "POST",
     body: JSON.stringify(data),
@@ -481,6 +481,19 @@ export function bulkDeleteMedia(
   return fetchJson(`/customers/${customerId}/projects/${projectId}/media/bulk/delete`, {
     method: "POST",
     body: JSON.stringify({ assetIds, force }),
+  });
+}
+
+export function addMediaUsage(
+  customerId: string,
+  projectId: string,
+  assetId: string,
+  contentId: string,
+  role: "hero" | "inline" | "thumbnail" | "attachment" | "social_media",
+): Promise<{ message: string }> {
+  return fetchJson(`/customers/${customerId}/projects/${projectId}/media/${assetId}/usage`, {
+    method: "POST",
+    body: JSON.stringify({ contentId, role }),
   });
 }
 

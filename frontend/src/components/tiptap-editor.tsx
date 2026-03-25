@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useEffect, useCallback } from "react";
+import { useMemo, useRef, useState, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Markdown } from "@tiptap/markdown";
@@ -18,6 +18,7 @@ import {
   Undo,
   Redo,
   Minus,
+  ImageIcon,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -143,6 +144,8 @@ interface TiptapEditorProps {
   onChange?: (markdown: string) => void;
   editable?: boolean;
   onImageUpload?: (file: File) => Promise<string>;
+  /** Called when user clicks the Media Library toolbar button. Should return the image URL to insert, or null to cancel. */
+  onMediaPick?: () => Promise<{ url: string; alt?: string } | null>;
 }
 
 // ── Main Editor Component ───────────────────────────────────────
@@ -152,6 +155,7 @@ export function TiptapEditor({
   onChange,
   editable = true,
   onImageUpload,
+  onMediaPick,
 }: TiptapEditorProps) {
   const initialHtml = useMemo(() => marked.parse(content) as string, [content]);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -385,6 +389,26 @@ export function TiptapEditor({
           >
             <Redo className="h-4 w-4" />
           </ToolbarButton>
+
+          {onMediaPick && (
+            <>
+              <ToolbarSep />
+              <ToolbarButton
+                onClick={async () => {
+                  const result = await onMediaPick();
+                  if (result && editor) {
+                    const node = editor.state.schema.nodes.image.create({ src: result.url, alt: result.alt ?? "" });
+                    const tr = editor.state.tr.insert(editor.state.selection.from, node);
+                    editor.view.dispatch(tr);
+                    editor.commands.focus();
+                  }
+                }}
+                title="Insert from Media Library"
+              >
+                <ImageIcon className="h-4 w-4" />
+              </ToolbarButton>
+            </>
+          )}
         </div>
       )}
 

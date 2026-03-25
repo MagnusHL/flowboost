@@ -25,6 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ContentStatusBadge, ContentTypeBadge } from "@/components/status-badge";
 import { ContentDetailLayout } from "@/components/content-detail-layout";
 import { TiptapEditor } from "@/components/tiptap-editor";
+import { MediaPicker } from "@/components/media-picker";
 import { useProject } from "@/lib/project-context";
 import {
   getContentItem,
@@ -42,10 +43,12 @@ import {
   scheduleTopic,
   getContentMedia,
   getContentMediaUrl,
+  getMediaFileUrl,
   generateHeroImage,
   uploadContentMedia,
   setHeroImage,
   deleteContentMedia,
+  addMediaUsage,
 } from "@/lib/api";
 import type { ContentItem, ContentVersion, MediaAsset, Topic } from "@/lib/types";
 import {
@@ -370,6 +373,9 @@ export default function ContentEditorPage({
   const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>([]);
   const [generating, setGenerating] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [showEditorMediaPicker, setShowEditorMediaPicker] = useState(false);
+  const editorInsertResolve = useRef<((url: string) => void) | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Track which languages the user actually edited (vs TiptapEditor roundtrip noise)
@@ -617,7 +623,7 @@ export default function ContentEditorPage({
     const keywords = meta?.keywords ?? "";
     const faqs = meta?.faqs ?? [];
     const heroUrl = item?.heroImageId
-      ? getContentMediaUrl(customerId, projectId, item.id, item.heroImageId)
+      ? getMediaFileUrl(customerId, projectId, item.heroImageId)
       : "";
     const version = versions.find((v) => v.id === activeVersionId) ?? versions[versions.length - 1];
     const langs = version?.languages?.map((l) => l.lang) ?? [activeLang];
@@ -1112,7 +1118,7 @@ export default function ContentEditorPage({
             {item.heroImageId ? (
               <div className="relative aspect-video rounded-md overflow-hidden border bg-muted">
                 <img
-                  src={getContentMediaUrl(customerId, projectId, item.id, item.heroImageId)}
+                  src={getMediaFileUrl(customerId, projectId, item.heroImageId)}
                   alt="Hero"
                   className="w-full h-full object-cover"
                 />
@@ -1163,6 +1169,15 @@ export default function ContentEditorPage({
                 {uploading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Upload className="mr-1 h-3 w-3" />}
                 Upload
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-xs"
+                onClick={() => setShowMediaPicker(true)}
+              >
+                <ImageIcon className="mr-1 h-3 w-3" />
+                Media
+              </Button>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -1207,7 +1222,7 @@ export default function ContentEditorPage({
                         }}
                       >
                         <img
-                          src={getContentMediaUrl(customerId, projectId, item.id, asset.id)}
+                          src={getMediaFileUrl(customerId, projectId, asset.id)}
                           alt={asset.altText ?? ""}
                           className="w-full h-full object-cover"
                         />
@@ -1248,6 +1263,47 @@ export default function ContentEditorPage({
                 Remove image
               </Button>
             )}
+
+            {/* Media Picker */}
+            <MediaPicker
+              open={showMediaPicker}
+              onOpenChange={setShowMediaPicker}
+              typeFilter="image"
+              selectedId={item.heroImageId}
+              onSelect={async (asset) => {
+                if (!item) return;
+                await setHeroImage(customerId, projectId, item.id, asset.id);
+                setItem({ ...item, heroImageId: asset.id });
+                if (!mediaAssets.find((a) => a.id === asset.id)) {
+                  setMediaAssets((prev) => [...prev, asset]);
+                }
+                setShowMediaPicker(false);
+              }}
+            />
+
+            {/* Editor Inline Media Picker */}
+            <MediaPicker
+              open={showEditorMediaPicker}
+              onOpenChange={(open) => {
+                setShowEditorMediaPicker(open);
+                if (!open && editorInsertResolve.current) {
+                  editorInsertResolve.current = null;
+                }
+              }}
+              typeFilter="image"
+              onSelect={(asset) => {
+                const url = getMediaFileUrl(customerId, projectId, asset.id);
+                // Track inline usage
+                if (item) {
+                  addMediaUsage(customerId, projectId, asset.id, item.id, "inline").catch(() => {});
+                }
+                if (editorInsertResolve.current) {
+                  editorInsertResolve.current(url);
+                  editorInsertResolve.current = null;
+                }
+                setShowEditorMediaPicker(false);
+              }}
+            />
           </div>
 
           {/* Delivery Info */}
@@ -1436,8 +1492,12 @@ export default function ContentEditorPage({
                   }}
                   onImageUpload={async (file) => {
                     const asset = await uploadContentMedia(customerId, projectId, item!.id, file, "inline");
-                    return getContentMediaUrl(customerId, projectId, item!.id, asset.id);
+                    return getMediaFileUrl(customerId, projectId, asset.id);
                   }}
+                  onMediaPick={() => new Promise((resolve) => {
+                    editorInsertResolve.current = (url: string) => resolve({ url });
+                    setShowEditorMediaPicker(true);
+                  })}
                 />
               ) : (
                 <Card>

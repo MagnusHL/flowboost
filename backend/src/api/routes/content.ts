@@ -805,16 +805,26 @@ export async function contentRoutes(app: FastifyInstance) {
     const item = content.get(contentId);
     if (!item) return reply.status(404).send({ error: "Content not found" });
 
-    if (assetId) {
-      const store = app.ctx.mediaFor(customerId, projectId);
-      if (!store.get(assetId)) {
-        return reply.status(404).send({ error: "Media asset not found" });
-      }
+    const store = app.ctx.mediaFor(customerId, projectId);
+    const now = new Date().toISOString();
+
+    if (assetId && !store.get(assetId)) {
+      return reply.status(404).send({ error: "Media asset not found" });
+    }
+
+    // Remove usage from old hero image
+    if (item.heroImageId && item.heroImageId !== assetId) {
+      store.removeUsage(item.heroImageId, contentId);
+    }
+
+    // Add usage to new hero image
+    if (assetId && assetId !== item.heroImageId) {
+      store.addUsage(assetId, { contentId, role: "hero", addedAt: now });
     }
 
     content.update(contentId, {
       heroImageId: assetId ?? undefined,
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
     });
 
     return { contentId, heroImageId: assetId };

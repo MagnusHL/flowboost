@@ -18,3 +18,14 @@ Issues are tracked on **GitHub** (not Linear):
 - Commit messages: Conventional Commits (`<type>(<scope>): <description>`)
 - Language: All code, comments, commits, and documentation in English
 - Branch model: `main` <- feature branches (fork workflow with upstream)
+
+## Before Submitting PRs
+
+Follow [CONTRIBUTING.md](CONTRIBUTING.md):
+- Test locally: `docker compose up --build`
+- TypeScript check: `cd backend && npx tsc --noEmit`
+- Frontend lint: `cd frontend && npm run lint`
+- Keep PRs focused — one thing per PR
+- Describe **what** changed and **why**
+- Screenshots for UI changes
+- New features / architecture changes: open an Issue first
