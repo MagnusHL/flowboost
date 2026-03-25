@@ -113,23 +113,38 @@ export interface AudioVersionMeta {
 export type MediaType = "image" | "video" | "audio" | "document";
 export type MediaSource = "generated" | "uploaded" | "extracted";
 
-export interface ContentMediaAsset {
+export interface MediaAsset {
   id: string;
-  contentId: string;
+  customerId: string;
+  projectId: string;
   type: MediaType;
   source: MediaSource;
-  role: "hero" | "inline";
   mimeType: string;
-  fileName: string;         // on disk: "{uuid}.png"
-  seoFilename: string;      // for delivery: "{slug}-hero"
-  altText?: string;
+  fileName: string;
   fileSize: number;
+  localPath: string;
+  cdnUrl?: string;
   width?: number;
   height?: number;
+  altText?: string;
+  durationSeconds?: number;
+  resolution?: string;
+  thumbnailPath?: string;
+  title?: string;
+  description?: string;
+  tags: string[];
+  usedBy: MediaUsageRef[];
   generationPrompt?: string;
   generationModel?: string;
   generationCostUsd?: number;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface MediaUsageRef {
+  contentId: string;
+  role: "hero" | "inline" | "thumbnail" | "attachment" | "social_media";
+  addedAt: string;
 }
 
 // ── Topic Status ────────────────────────────────────────────────
