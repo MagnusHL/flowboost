@@ -1,0 +1,21 @@
+name: Notify Discord on Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  discord-notification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord announcement
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RELEASE_NAME: ${{ github.event.release.name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+          REPO_NAME: ${{ github.repository }}
+        run: |
+          BODY="${RELEASE_BODY:0:1000}"
+          curl -s -X POST "$DISCORD_WEBHOOK" -H "Content-Type: application/json" -d "{\"username\":\"flowboost Releases\",\"embeds\":[{\"title\":\"Release ${RELEASE_TAG}\",\"url\":\"${RELEASE_URL}\",\"description\":\"$BODY\",\"color\":5814783}]}"
