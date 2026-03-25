@@ -1,4 +1,4 @@
-import type { Customer, Project, Topic, Category, Author, PipelineRun, ContentItem, ContentVersion, ContentType, ContentItemStatus, ContentIndex, ChatMessage, ContentMediaAsset } from "./types";
+import type { Customer, Project, Topic, Category, Author, PipelineRun, ContentItem, ContentVersion, ContentType, ContentItemStatus, ContentIndex, ChatMessage, MediaAsset } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:6100";
 
@@ -355,13 +355,142 @@ export function restoreContent(customerId: string, projectId: string, contentId:
   return fetchJson(`/customers/${customerId}/projects/${projectId}/content/${contentId}/restore`, { method: "POST" });
 }
 
-// ── Content Media ────────────────────────────────────────────────
+// ── Media Library ───────────────────────────────────────────────
+
+export function getMedia(
+  customerId: string,
+  projectId: string,
+  filters?: { type?: string; source?: string; tags?: string; search?: string; unused?: boolean; page?: number; limit?: number },
+): Promise<{ total: number; assets: MediaAsset[] }> {
+  const params = new URLSearchParams();
+  if (filters?.type) params.set("type", filters.type);
+  if (filters?.source) params.set("source", filters.source);
+  if (filters?.tags) params.set("tags", filters.tags);
+  if (filters?.search) params.set("search", filters.search);
+  if (filters?.unused) params.set("unused", "true");
+  if (filters?.page) params.set("page", String(filters.page));
+  if (filters?.limit) params.set("limit", String(filters.limit));
+  const qs = params.toString();
+  return fetchJson(`/customers/${customerId}/projects/${projectId}/media${qs ? `?${qs}` : ""}`);
+}
+
+export function getMediaAsset(
+  customerId: string,
+  projectId: string,
+  assetId: string,
+): Promise<MediaAsset> {
+  return fetchJson(`/customers/${customerId}/projects/${projectId}/media/${assetId}`);
+}
+
+export function updateMediaAsset(
+  customerId: string,
+  projectId: string,
+  assetId: string,
+  data: { title?: string; description?: string; tags?: string[]; altText?: string },
+): Promise<MediaAsset> {
+  return fetchJson(`/customers/${customerId}/projects/${projectId}/media/${assetId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteMediaAsset(
+  customerId: string,
+  projectId: string,
+  assetId: string,
+  force?: boolean,
+): Promise<{ message: string }> {
+  return fetchJson(`/customers/${customerId}/projects/${projectId}/media/${assetId}${force ? "?force=true" : ""}`, {
+    method: "DELETE",
+  });
+}
+
+export function getMediaTags(
+  customerId: string,
+  projectId: string,
+): Promise<{ tags: { tag: string; count: number }[] }> {
+  return fetchJson(`/customers/${customerId}/projects/${projectId}/media/tags`);
+}
+
+export function getMediaFileUrl(
+  customerId: string,
+  projectId: string,
+  assetId: string,
+): string {
+  return `${API_URL}/customers/${customerId}/projects/${projectId}/media/${assetId}/file`;
+}
+
+export function getMediaThumbnailUrl(
+  customerId: string,
+  projectId: string,
+  assetId: string,
+): string {
+  return `${API_URL}/customers/${customerId}/projects/${projectId}/media/${assetId}/thumbnail`;
+}
+
+export async function uploadMedia(
+  customerId: string,
+  projectId: string,
+  file: File,
+  metadata?: { title?: string; description?: string; tags?: string[] },
+): Promise<{ asset: MediaAsset; thumbnailGenerated: boolean }> {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (metadata?.title) formData.append("title", metadata.title);
+  if (metadata?.description) formData.append("description", metadata.description);
+  if (metadata?.tags) formData.append("tags", JSON.stringify(metadata.tags));
+  const res = await fetch(
+    `${API_URL}/customers/${customerId}/projects/${projectId}/media/upload`,
+    { method: "POST", body: formData },
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { error?: string }).error ?? `Upload failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export function generateMedia(
+  customerId: string,
+  projectId: string,
+  data: { prompt: string; aspectRatio?: string; title?: string; tags?: string[]; linkToContent?: { contentId: string; role: string } },
+): Promise<{ asset: MediaAsset; thumbnailGenerated: boolean }> {
+  return fetchJson(`/customers/${customerId}/projects/${projectId}/media/generate`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function bulkUpdateMedia(
+  customerId: string,
+  projectId: string,
+  data: { assetIds: string[]; addTags?: string[]; removeTags?: string[] },
+): Promise<{ updated: MediaAsset[] }> {
+  return fetchJson(`/customers/${customerId}/projects/${projectId}/media/bulk/update`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function bulkDeleteMedia(
+  customerId: string,
+  projectId: string,
+  assetIds: string[],
+  force?: boolean,
+): Promise<{ deleted: string[]; failed: string[]; blocked?: string[] }> {
+  return fetchJson(`/customers/${customerId}/projects/${projectId}/media/bulk/delete`, {
+    method: "POST",
+    body: JSON.stringify({ assetIds, force }),
+  });
+}
+
+// ── Content Media (convenience wrappers) ────────────────────────
 
 export function getContentMedia(
   customerId: string,
   projectId: string,
   contentId: string,
-): Promise<{ total: number; assets: ContentMediaAsset[] }> {
+): Promise<{ total: number; assets: MediaAsset[] }> {
   return fetchJson(`/customers/${customerId}/projects/${projectId}/content/${contentId}/media`);
 }
 
@@ -380,23 +509,10 @@ export function generateHeroImage(
   contentId: string,
   prompt: string,
   aspectRatio?: "16:9" | "1:1" | "9:16" | "4:3" | "3:4",
-): Promise<ContentMediaAsset> {
+): Promise<{ asset: MediaAsset; thumbnailGenerated: boolean }> {
   return fetchJson(`/customers/${customerId}/projects/${projectId}/content/${contentId}/media/generate`, {
     method: "POST",
     body: JSON.stringify({ prompt, aspectRatio }),
-  });
-}
-
-export function generateContentImage(
-  customerId: string,
-  projectId: string,
-  contentId: string,
-  prompt: string,
-  options?: { aspectRatio?: "16:9" | "1:1" | "9:16" | "4:3" | "3:4"; role?: "hero" | "inline" },
-): Promise<ContentMediaAsset> {
-  return fetchJson(`/customers/${customerId}/projects/${projectId}/content/${contentId}/media/generate`, {
-    method: "POST",
-    body: JSON.stringify({ prompt, aspectRatio: options?.aspectRatio, role: options?.role ?? "hero" }),
   });
 }
 
@@ -406,7 +522,7 @@ export async function uploadContentMedia(
   contentId: string,
   file: File,
   role: "hero" | "inline" = "hero",
-): Promise<ContentMediaAsset> {
+): Promise<{ asset: MediaAsset; thumbnailGenerated: boolean }> {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("role", role);
@@ -418,7 +534,7 @@ export async function uploadContentMedia(
     const body = await res.json().catch(() => ({}));
     throw new Error((body as { error?: string }).error ?? `Upload failed: ${res.status}`);
   }
-  return res.json() as Promise<ContentMediaAsset>;
+  return res.json();
 }
 
 export function setHeroImage(

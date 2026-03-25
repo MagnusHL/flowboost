@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import {
   CalendarDays,
   FileText,
+  ImageIcon,
   Share2,
   Activity,
   Users,
@@ -30,6 +31,7 @@ import { CreateProjectWizard } from "@/components/create-project-wizard";
 const navItems = [
   { href: "/dashboard", label: "Plan", icon: CalendarDays },
   { href: "/content", label: "Articles", icon: FileText },
+  { href: "/media", label: "Media", icon: ImageIcon },
   { href: "/social", label: "Social Posts", icon: Share2 },
   { href: "/monitor", label: "Monitor", icon: Activity },
   { href: "/team", label: "Team", icon: Users },

@@ -47,7 +47,7 @@ import {
   setHeroImage,
   deleteContentMedia,
 } from "@/lib/api";
-import type { ContentItem, ContentVersion, ContentMediaAsset, Topic } from "@/lib/types";
+import type { ContentItem, ContentVersion, MediaAsset, Topic } from "@/lib/types";
 import {
   DndContext,
   closestCenter,
@@ -367,7 +367,7 @@ export default function ContentEditorPage({
   const [schedTime, setSchedTime] = useState("");
 
   // Hero image / media gallery
-  const [mediaAssets, setMediaAssets] = useState<ContentMediaAsset[]>([]);
+  const [mediaAssets, setMediaAssets] = useState<MediaAsset[]>([]);
   const [generating, setGenerating] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
