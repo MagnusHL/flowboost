@@ -122,7 +122,7 @@ On **macOS**, the CLI stores credentials in the Keychain, not as files. Export t
 security find-generic-password -s "Claude Code-credentials" -w > ~/.claude/.credentials.json
 ```
 
-On **Linux**, `~/.claude/.credentials.json` already exists after `claude login` — no export needed.
+On **Linux** and **Windows**, `~/.claude/.credentials.json` already exists after `claude login` — no export needed. On Windows, `~` is `%USERPROFILE%` (e.g. `C:\Users\<Name>`).
 
 ```bash
 # 2. Copy the override template
@@ -150,7 +150,7 @@ docker compose exec api claude auth status
 
 Leave `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN` empty in `.env`.
 
-> **Note:** OAuth tokens expire. If the container reports `loggedIn: false`, re-export your credentials (macOS) or re-run `claude login` (Linux) and recreate the container with `docker compose up -d --force-recreate api`.
+> **Note:** OAuth tokens expire. If the container reports `loggedIn: false`, re-export your credentials (macOS) or re-run `claude login` (Linux/Windows) and recreate the container with `docker compose up -d --force-recreate api`.
 
 ## Project Structure
 

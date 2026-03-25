@@ -111,7 +111,7 @@ case "$AUTH_CHOICE" in
           CRED_FILE=""
         fi
       else
-        # Linux: credentials file should already exist
+        # Linux/Windows: credentials file should already exist
         if [ ! -f "$CRED_FILE" ]; then
           echo "  Error: ~/.claude/.credentials.json not found."
           echo "  Run: claude login"
