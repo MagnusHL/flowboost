@@ -1,20 +1,20 @@
-# FlowBoost -- Claude Code Kontext
+# FlowBoost -- Claude Code Context
 
-## Issue-Tracking
+## Issue Tracking
 
-Issues werden auf **GitHub** getrackt (nicht Linear):
+Issues are tracked on **GitHub** (not Linear):
 - Upstream: https://github.com/johrld/flowboost/issues
 - Fork: https://github.com/MagnusHL/flowboost/issues
 
 ## Stack
 
-- **Backend**: Fastify (TypeScript, ESM), File-basierter JSON Store, Sharp
+- **Backend**: Fastify (TypeScript, ESM), file-based JSON store, Sharp
 - **Frontend**: Next.js 16, React 19, Shadcn/UI, TipTap Editor
 - **AI**: Claude Agent SDK (`@anthropic-ai/claude-agent-sdk`), Google Imagen 4
 - **Deployment**: Docker Compose (dev), Dokploy (prod)
 
-## Konventionen
+## Conventions
 
-- Commit Messages: Conventional Commits (`<type>(<scope>): <beschreibung>`)
-- Sprache: Code und Kommentare auf Englisch, Commit Messages und Doku auf Deutsch
-- Branch-Modell: `main` <- Feature-Branches (Fork-Workflow mit upstream)
+- Commit messages: Conventional Commits (`<type>(<scope>): <description>`)
+- Language: All code, comments, commits, and documentation in English
+- Branch model: `main` <- feature branches (fork workflow with upstream)
