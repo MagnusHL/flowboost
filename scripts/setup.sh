@@ -86,35 +86,65 @@ case "$AUTH_CHOICE" in
     ;;
   3)
     echo ""
-    # Create docker-compose.override.yml with named volume
-    if [ -f "$OVERRIDE_FILE" ]; then
-      echo "  docker-compose.override.yml already exists."
-      echo "  Please add this manually if not already present:"
-      echo ""
-      echo "    services:"
-      echo "      api:"
-      echo "        volumes:"
-      echo "          - claude-credentials:/root/.claude"
-      echo "    volumes:"
-      echo "      claude-credentials:"
+    # Check if Claude CLI is installed and logged in
+    if ! command -v claude &> /dev/null; then
+      echo "  Error: Claude Code CLI is not installed."
+      echo "  Install it first: https://docs.anthropic.com/en/docs/claude-code"
+      echo "  Then run: claude login"
+      echo "  Skipping."
+    elif ! claude auth status 2>/dev/null | grep -q '"loggedIn": true'; then
+      echo "  Error: Claude CLI is not logged in."
+      echo "  Run: claude login"
+      echo "  Skipping."
     else
-      cat > "$OVERRIDE_FILE" << 'YAML'
+      # Export credentials from Keychain on macOS
+      CRED_FILE="$HOME/.claude/.credentials.json"
+      if [[ "$(uname)" == "Darwin" ]]; then
+        echo "  macOS detected — exporting credentials from Keychain..."
+        KEYCHAIN_USER=$(whoami)
+        if security find-generic-password -s "Claude Code-credentials" -a "$KEYCHAIN_USER" -w > "$CRED_FILE" 2>/dev/null; then
+          echo "  Credentials exported to ~/.claude/.credentials.json"
+        else
+          echo "  Error: Could not export credentials from Keychain."
+          echo "  Make sure you are logged in: claude login"
+          echo "  Skipping."
+          CRED_FILE=""
+        fi
+      else
+        # Linux: credentials file should already exist
+        if [ ! -f "$CRED_FILE" ]; then
+          echo "  Error: ~/.claude/.credentials.json not found."
+          echo "  Run: claude login"
+          echo "  Skipping."
+          CRED_FILE=""
+        else
+          echo "  Credentials file found at ~/.claude/.credentials.json"
+        fi
+      fi
+
+      if [ -n "$CRED_FILE" ]; then
+        # Create docker-compose.override.yml with volume mounts
+        if [ -f "$OVERRIDE_FILE" ]; then
+          echo "  docker-compose.override.yml already exists."
+          echo "  Please add these volume mounts manually if not already present:"
+          echo ""
+          echo "    services:"
+          echo "      api:"
+          echo "        volumes:"
+          echo "          - ~/.claude.json:/root/.claude.json:ro"
+          echo "          - ~/.claude/.credentials.json:/root/.claude/.credentials.json:ro"
+        else
+          cat > "$OVERRIDE_FILE" << 'YAML'
 services:
   api:
     volumes:
-      - claude-credentials:/root/.claude
-
-volumes:
-  claude-credentials:
+      - ~/.claude.json:/root/.claude.json:ro
+      - ~/.claude/.credentials.json:/root/.claude/.credentials.json:ro
 YAML
-      echo "  Created docker-compose.override.yml with credential volume."
+          echo "  Created docker-compose.override.yml with credential mounts."
+        fi
+      fi
     fi
-    echo ""
-    echo "  After starting the containers, run:"
-    echo "    docker compose exec api claude auth login"
-    echo ""
-    echo "  This opens a URL — sign in with your Claude account."
-    echo "  Credentials persist in the Docker volume across rebuilds."
     ;;
   4)
     echo "  Skipped."
@@ -164,8 +194,8 @@ echo ""
 echo "    docker compose up --build"
 echo ""
 if [ "$AUTH_CHOICE" = "3" ]; then
-  echo "    # Then authenticate in a second terminal:"
-  echo "    docker compose exec api claude auth login"
+  echo "    # Verify auth inside the container:"
+  echo "    docker compose exec api claude auth status"
   echo ""
 fi
 echo "    Open http://localhost:6101"

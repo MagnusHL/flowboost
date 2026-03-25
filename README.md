@@ -47,7 +47,7 @@ FlowBoost uses the [Claude Agent SDK](https://docs.anthropic.com/en/docs/agents/
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and Docker Compose
-- An [Anthropic API key](https://console.anthropic.com) or Claude Max subscription
+- An [Anthropic API key](https://console.anthropic.com) **or** [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and logged in (`claude login`)
 - Optional: [Google Gemini API key](https://aistudio.google.com/apikey) for image generation
 
 ### Quick Start
@@ -106,40 +106,51 @@ ANTHROPIC_AUTH_TOKEN=sk-ant-oat01-...
 
 > **Note:** The access token expires after a few months. When it does, you need to paste a fresh one. For automatic refresh, use Option 3.
 
-### Option 3: CLI Login (Max subscription, recommended)
+### Option 3: CLI Credentials (Max subscription, recommended)
 
-Authenticate the CLI inside the container using a persistent Docker volume. The CLI stores both access and refresh tokens, so credentials renew automatically.
+Mount your local Claude Code CLI credentials into the container. Requires the CLI installed and logged in on the host.
 
 ```bash
-# 1. Copy the override template
+# 1. Make sure you're logged in
+claude auth status
+# Expected: "loggedIn": true
+```
+
+On **macOS**, the CLI stores credentials in the Keychain, not as files. Export them first:
+
+```bash
+security find-generic-password -s "Claude Code-credentials" -w > ~/.claude/.credentials.json
+```
+
+On **Linux**, `~/.claude/.credentials.json` already exists after `claude login` — no export needed.
+
+```bash
+# 2. Copy the override template
 cp docker-compose.override.example.yml docker-compose.override.yml
 ```
 
-Uncomment the named volume in `docker-compose.override.yml`:
+Uncomment the volume mounts in `docker-compose.override.yml`:
 
 ```yaml
 services:
   api:
     volumes:
-      - claude-credentials:/root/.claude
-
-volumes:
-  claude-credentials:
+      - ~/.claude.json:/root/.claude.json:ro
+      - ~/.claude/.credentials.json:/root/.claude/.credentials.json:ro
 ```
 
 ```bash
-# 2. Start services
+# 3. Start services
 docker compose up --build -d
 
-# 3. Authenticate once inside the container
-docker compose exec api claude login
+# 4. Verify authentication inside the container
+docker compose exec api claude auth status
+# Expected: "loggedIn": true, "authMethod": "oauth_token"
 ```
 
-Credentials persist in the Docker volume across container rebuilds. Leave `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN` empty in `.env`.
+Leave `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN` empty in `.env`.
 
-> **Why not mount `~/.claude/` from the host?** On macOS, the CLI stores credentials in the Keychain, not as files — there's nothing to mount. The named volume approach works on all operating systems.
->
-> **Heads up:** `docker compose down -v` deletes all volumes, including credentials. You'll need to run `claude auth login` again afterwards.
+> **Note:** OAuth tokens expire. If the container reports `loggedIn: false`, re-export your credentials (macOS) or re-run `claude login` (Linux) and recreate the container with `docker compose up -d --force-recreate api`.
 
 ## Project Structure
 
