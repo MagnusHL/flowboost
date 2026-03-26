@@ -137,8 +137,16 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t px-4 py-3 text-xs text-muted-foreground">
-        flowboost v0.2.0
+      <div className="border-t px-4 py-3 text-xs text-muted-foreground flex items-center gap-2">
+        <span>flowboost v0.2.0</span>
+        {process.env.NODE_ENV === "production" ? (
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-500" title="Production" />
+        ) : (
+          <>
+            <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500" title="Development" />
+            <span className="opacity-60">dev</span>
+          </>
+        )}
       </div>
 
       <CreateProjectWizard

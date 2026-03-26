@@ -278,6 +278,74 @@ To publish articles directly to a GitHub repo:
 }
 ```
 
+## Deployment
+
+### Production with Docker Compose
+
+```bash
+# Build and start in production mode
+docker compose -f docker-compose.production.yml up --build -d
+```
+
+This is a standalone compose file (not an overlay on the dev compose). It uses a production-optimized frontend build and a named volume for persistent data.
+
+### Environment Variables (Production)
+
+Set these in your `.env` or hosting platform:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ANTHROPIC_API_KEY` | Yes (or use CLI login) | Anthropic API key for Claude Agent SDK |
+| `GEMINI_API_KEY` | No | Google Gemini key for image generation |
+| `PORT` | No | Backend port (default: 6100) |
+| `FRONTEND_PORT` | No | Dashboard port (default: 6101) |
+| `FRONTEND_URL` | No | Public dashboard URL (for CORS, default: http://localhost:6101) |
+| `NEXT_PUBLIC_API_URL` | No | Override API URL for browser (default: proxied via `/backend`) |
+| `BACKEND_URL` | No | Internal API URL for the proxy (default: `http://localhost:6100`, in Docker: `http://api:6100`) |
+
+### Hosting Platforms
+
+**Dokploy / Coolify:**
+
+1. Create a new project, select **Compose** type, connect your GitHub repo
+2. Set compose path to `docker-compose.production.yml`
+3. Set environment variables in the platform UI:
+
+   | Variable | Required | Value |
+   |----------|----------|-------|
+   | `ANTHROPIC_API_KEY` | Yes (or use CLI login) | Your Anthropic Console key |
+   | `GEMINI_API_KEY` | No | Google Gemini key for image generation |
+   | `FRONTEND_URL` | No | Public dashboard URL for CORS (default: auto-detected) |
+
+4. Configure **one domain** for the dashboard service (e.g. `flowboost.yourdomain.com`). The API is proxied through the dashboard — no separate API domain needed.
+
+5. Deploy
+
+6. **Authentication** — choose one:
+   - **API Key**: Set `ANTHROPIC_API_KEY` as env var — done, no further steps
+   - **CLI Login** (Max/Pro subscription): Open the terminal in the Dokploy dashboard for the API service, run `claude login`, follow the URL to authorize. Credentials persist in the `claude-credentials` volume across rebuilds.
+
+7. Open your dashboard URL — the onboarding wizard will guide you through creating your first project
+
+> **Note:** `setup.sh` is NOT needed for production — project defaults are baked into the Docker image. The onboarding wizard handles first-time setup.
+>
+> **Warning:** `docker compose down -v` deletes all volumes including credentials and data.
+
+**Behind a Reverse Proxy (Traefik, Nginx, Caddy):**
+- Point your domain to the dashboard port (default 6101) — the API is proxied through it automatically
+- No separate API domain needed (the dashboard proxies `/backend/*` to the API service)
+- Optional: Set `FRONTEND_URL` for CORS if needed
+
+### Data Persistence
+
+All runtime data (projects, content, media) is stored in `backend/data/`. In production, this is a named Docker volume (`flowboost-data`). To back up:
+
+```bash
+docker compose cp api:/app/data ./backup
+```
+
+> **Warning:** `docker compose down -v` deletes all volumes, including your data.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, branching conventions, and PR guidelines.

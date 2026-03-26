@@ -1,6 +1,6 @@
 import type { Customer, Project, Topic, Category, Author, PipelineRun, ContentItem, ContentVersion, ContentType, ContentItemStatus, ContentIndex, ChatMessage, ContentMediaAsset } from "./types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:6100";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/backend";
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = { ...init?.headers as Record<string, string> };

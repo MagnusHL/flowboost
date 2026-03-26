@@ -1,0 +1,51 @@
+# Production deployment — standalone compose file (does NOT extend docker-compose.yml)
+# Usage: docker compose -f docker-compose.production.yml up --build -d
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: ../Dockerfile.backend
+    ports:
+      - "${PORT:-6100}:${PORT:-6100}"
+    volumes:
+      - flowboost-data:/app/data
+      - claude-credentials:/root/.claude
+    env_file: .env
+    environment:
+      - DATA_DIR=/app/data
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:${FRONTEND_PORT:-6101}}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:${PORT:-6100}/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  dashboard:
+    build:
+      context: ./frontend
+      dockerfile: ../Dockerfile.frontend
+      args:
+        - BACKEND_URL=http://api:${PORT:-6100}
+    ports:
+      - "${FRONTEND_PORT:-6101}:6001"
+    env_file: .env
+    environment:
+      - PORT=6001
+      - HOSTNAME=0.0.0.0
+      - BACKEND_URL=http://api:${PORT:-6100}
+    depends_on:
+      - api
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:6001"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  flowboost-data:
+  claude-credentials:
